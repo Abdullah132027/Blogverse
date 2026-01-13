@@ -3,7 +3,6 @@ import { db } from "../firebase/firebase";
 import { doc, getDoc, collection, query, where, getDocs, setDoc } from "firebase/firestore";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../firebase/firebase";
-import { useNavigate } from "react-router-dom";
 import imageCompression from "browser-image-compression";
 
 
@@ -18,62 +17,33 @@ function Signup() {
     const [profilePic, setProfilePic] = useState(null); // ✅ Profile pic
     const [error, setError] = useState("");
     const [msgClr, setMsgClr] = useState("text-red-500");
-    const [loading, setLoading] = useState(false);
-    const navigate = useNavigate();
 
-    const handleImageChange = async (e) => {
+    const handleImageChange = (e) => {
         const file = e.target.files[0];
-        if (!file) return;
-
-        setLoading(true);
-        try {
-            const options = {
-                maxSizeMB: 0.65, // ≈650KB
-                maxWidthOrHeight: 1920,
-                useWebWorker: true,
-            };
-
-            const compressedFile = await imageCompression(file, options);
-
-            // ✅ Safety check
-            if (!compressedFile) {
-                alert("Image compression failed. Please try another image.");
-                setLoading(false);
-                return;
-            }
-
-            // ✅ Size validation after compression
-            if (compressedFile.size > 650 * 1024) {
+        if (file) {
+            if (file.size > 650 * 1024) { // 650kb limit
                 alert("Image size must be under 650KB in the developer version (unlimited in production).");
                 setProfilePic(null);
-                setLoading(false);
                 return;
+            } else {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setProfilePic(reader.result); // Base64 image
+                };
+                reader.readAsDataURL(file);
             }
-
-            // ✅ Convert to Base64
-            const reader = new FileReader();
-            reader.onloadend = () => setProfilePic(reader.result);
-            reader.readAsDataURL(compressedFile);
-            setLoading(false);
-        } catch (error) {
-            console.error("Image processing failed:", error);
-            alert("Something went wrong while processing the image.");
-        } finally {
-            setLoading(false);
         }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        setLoading(true);
         // 🔎 Check if userId already exists
         const userRef = doc(db, "users", userId);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
             setError("User ID already exists.");
-            setLoading(false);
             return;
         }
 
@@ -83,31 +53,26 @@ function Signup() {
 
         if (!querySnapshot.empty) {
             setError("Email already exists.");
-            setLoading(false);
             return;
         }
 
         if (name.trim() === "" || userId.trim() === "" || email.trim() === "" || password.trim() === "" || confirmPassword.trim() === "" || country.trim() === "" || bio.trim() === "") {
             setError("All fields are required.");
-            setLoading(false);
             return;
         }
 
         if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
             setError("Invalid email format.");
-            setLoading(false);
             return;
         }
 
         if (password !== confirmPassword) {
             setError("Passwords don't match.");
-            setLoading(false);
             return;
         }
 
         if (password.length < 6) {
             setError("Password must be at least 6 characters long.");
-            setLoading(false);
             return;
         }
 
@@ -134,30 +99,26 @@ function Signup() {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user; // auto-generated UID
             await setDoc(doc(db, "users", user.uid), newUser);
-            // Clear inputs
-            setName("");
-            setUserId("");
-            setEmail("");
-            setPassword("");
-            setConfirmPassword("");
-            setBio("");
-            setCountry("");
-            setProfilePic(null);
-            setMsgClr("text-green-500");
-            setError("✅ Account created successfully!");
-            setTimeout(() => {
-                setError("");
-                setMsgClr("text-red-500");
-            }, 3000);
-            setLoading(false);
-            navigate("/");
-
         } catch (error) {
             setError("Error creating user: " + error.message);
-            setLoading(false);
-        } finally {
-            setLoading(false);
         }
+
+
+        // Clear inputs
+        setName("");
+        setUserId("");
+        setEmail("");
+        setPassword("");
+        setConfirmPassword("");
+        setBio("");
+        setCountry("");
+        setProfilePic(null);
+        setMsgClr("text-green-500");
+        setError("✅ Account created successfully!");
+        setTimeout(() => {
+            setError("");
+            setMsgClr("text-red-500");
+        }, 3000);
     };
 
     return (
@@ -176,8 +137,7 @@ function Signup() {
                         onChange={handleImageChange}
                         className="border p-2 rounded"
                     />
-                    {loading && <p className="text-sm text-gray-500 mt-2">Processing image...</p>}
-                    {profilePic && !loading && (
+                    {profilePic && (
                         <img
                             src={profilePic}
                             alt="Profile Preview"
@@ -247,9 +207,7 @@ function Signup() {
                     type="submit"
                     className="bg-primary text-bg w-full py-2 rounded-md hover:bg-opacity-90 transition duration-300 cursor-pointer"
                 >
-                    {
-                        loading ? "Creating Account..." : "Sign Up"
-                    }
+                    Register
                 </button>
             </form>
         </div>

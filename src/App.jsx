@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './firebase/firebase'
 import './App.css'
 import BlogItem from './Components/BlogItem'
 import Footer from './Components/Footer'
@@ -14,36 +16,40 @@ import UserProfile from './Pages/UserProfile'
 import Writers from './Pages/Writers'
 import SinglePost from './Pages/SinglePost'
 import CreatePost from './Pages/CreatePost'
+import UserProvider from './contexts/context'
 
 function App() {
-  const [loggedStatus, setLoggedStatus] = useState(false);
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // 👇 This effect runs once on app load
   useEffect(() => {
-    const storedUser = localStorage.getItem('loggedInUser');
-    if (storedUser) {
-      setLoggedStatus(true);
-    }
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setLoading(false);
+    });
+    return () => unsubscribe();
   }, []);
 
   return (
     <>
       <BrowserRouter>
-        <Navbar loggedStatus={loggedStatus} />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/blog" element={<Blog />} />
-          <Route path="/about" element={<About />} />
-          <Route path="/contact" element={<Contact />} />
-          <Route path="/login" element={<Login setLoggedStatus={setLoggedStatus} />} />
-          <Route path="/signup" element={<Signup />} />
-          <Route path="/profile" element={<UserProfile />} />
-          <Route path="/our-writers" element={<Writers />} />
-          <Route path="/singlePost/:postId" element={<SinglePost />} />
-          <Route path="/create-post" element={<CreatePost />} />
-        </Routes>
+        <UserProvider>
+          <Navbar loggedStatus={user} />
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/login" element={<Login setLoggedStatus={setUser} />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/profile/:userId" element={<UserProfile setLoggedStatus={setUser} />} />
+            <Route path="/our-writers" element={<Writers />} />
+            <Route path="/singlePost/:postId" element={<SinglePost />} />
+            <Route path="/create-post" element={<CreatePost />} />
+          </Routes>
 
-        <Footer />
+          <Footer />
+        </UserProvider>
       </BrowserRouter>
     </>
   )

@@ -1,9 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useContext } from 'react'
 import logo from '../assets/logo.png'
 import { Link } from 'react-router-dom'
 import { useNavigate } from 'react-router-dom'
+import { UserContext } from '../contexts/context'
 
-function Navbar({loggedStatus}) {
+function Navbar({ loggedStatus }) {
+    const { user, userPosts, loading, handleDelete } = useContext(UserContext);
     const navigate = useNavigate();
 
     const handleLogin = () => {
@@ -15,7 +17,7 @@ function Navbar({loggedStatus}) {
     };
 
     const userProfile = () => {
-        navigate('/profile'); // Assuming you have a profile route
+        navigate(`/profile/${user.userId}`); // Assuming you have a profile route
     };
 
     return (
@@ -48,7 +50,7 @@ function Navbar({loggedStatus}) {
                     {/* Auth Buttons */}
                     {loggedStatus ? (<div className="flex justify-center items-center space-x-2 ml-auto min-w-40" onClick={userProfile}>
                         <img
-                            src="https://i.pravatar.cc/150?img=5" // Placeholder avatar
+                            src={user.profilePic} // Placeholder avatar
                             alt="User Avatar"
                             className="w-10 h-10 rounded-full object-cover border-2 border-primary cursor-pointer"
                         />
