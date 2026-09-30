@@ -16,7 +16,7 @@ import UserProfile from './Pages/UserProfile'
 import Writers from './Pages/Writers'
 import SinglePost from './Pages/SinglePost'
 import CreatePost from './Pages/CreatePost'
-import UserProvider from './contexts/context'
+import UserProvider from './contexts/Context'
 
 function App() {
   const [user, setUser] = useState(null);
