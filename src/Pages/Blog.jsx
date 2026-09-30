@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react'
 import BlogItem from '../Components/BlogItem'
-import { UserContext } from "../contexts/context";
+import { UserContext } from "../contexts/Context";
 
 function Blog() {
   const { user, userPosts, loading } = useContext(UserContext);
